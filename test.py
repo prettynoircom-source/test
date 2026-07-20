@@ -1,4 +1,5 @@
 import streamlit as st
+import urllib.request
 
 # MBTI별 추천 직업 및 포켓몬 데이터
 # 포켓몬 이미지는 영문 이름을 기반으로 두 개의 이미지 소스(pokemondb, PokeAPI)를
@@ -47,6 +48,14 @@ def get_image_candidates(name_en: str, dex_id: int):
         f"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{dex_id}.png",
     ]
 
+
+@st.cache_data(show_spinner=False)
+def fetch_image_bytes(url: str):
+    """서버에서 직접 이미지를 다운로드합니다. 브라우저가 URL을 못 불러오는 문제를 우회합니다."""
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=5) as response:
+        return response.read()
+
 st.set_page_config(page_title="MBTI 직업 & 포켓몬 추천", page_icon="✨", layout="centered")
 
 st.title("✨ MBTI 직업 & 포켓몬 추천기")
@@ -64,7 +73,8 @@ if st.button("추천 받기"):
     shown = False
     for url in candidates:
         try:
-            st.image(url, caption=data["pokemon"], width=300)
+            img_bytes = fetch_image_bytes(url)
+            st.image(img_bytes, caption=data["pokemon"], width=300)
             shown = True
             break
         except Exception:
